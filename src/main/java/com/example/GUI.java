@@ -7,12 +7,11 @@ import java.util.ArrayList;
 
 public class GUI {
 
-    //private final int WIDTH = 300;
-    //private final int HEIGHT = 300;
-
     private JFrame frame;
-    private JTextArea textArea;
     private JTextField textField;
+
+    private DefaultListModel<String> listModel;
+    private JList<String> taskList;
 
     private JButton buttonAdd;
     private JButton buttonRemove;
@@ -27,7 +26,14 @@ public class GUI {
 
     public GUI(Controller controller) {
 
+        // Инициаллизирование списка заданий
         this.tasks = new ArrayList<>();
+
+        // Создание списка с нашими заданиями и окна на котором будет показываться наш список
+        this.listModel = new DefaultListModel<>();
+        this.taskList = new JList<>(this.listModel);
+        this.taskList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
 
         // Создание контролерра мышки
         this.controller = controller;
@@ -37,12 +43,9 @@ public class GUI {
         this.frame = new JFrame("TO-Do-List");
         this.frame.setLayout(new BorderLayout());
 
-        // Создание поля где будет весь текст
-        this.textArea = new JTextArea();
-        JScrollPane scroll = new JScrollPane(textArea);
-        this.textArea.setEditable(false);
-        this.textArea.setRows(10);
-        this.textArea.setColumns(30);
+
+        JScrollPane scroll = new JScrollPane(taskList);
+        scroll.setPreferredSize(new Dimension(300, 200));
         this.frame.add(scroll, BorderLayout.NORTH);
 
         // Создание input-line
@@ -61,9 +64,14 @@ public class GUI {
         });
         buttonPanel.add(this.buttonAdd);
 
-        // Создание кнопоки для удаления записи
+        // Создание кнопоки для удаления последней записи или удаления выбраной записи
         this.buttonRemove = new JButton("Remove");
         this.buttonRemove.addActionListener(e -> {
+            int index = taskList.getSelectedIndex();
+            if (index >= 0 ) {
+                controller.removeSelectedTask();
+                return;
+            }
             controller.removeTextClick();
         });
         buttonPanel.add(this.buttonRemove);
@@ -82,7 +90,12 @@ public class GUI {
         if (this.tasks == null) {
             this.tasks = new ArrayList<>();
         }
-        updateTextArea();
+
+        for (String t : tasks) {
+            listModel.addElement(t);
+        }
+
+        this.taskList.addMouseListener(this.controller.getListMouseAdapter());
 
         this.frame.pack();
         this.frame.setLocationRelativeTo(null);
@@ -99,16 +112,30 @@ public class GUI {
     // Метод добавления записи
     public void addTask(String task) {
         tasks.add(task);
-        updateTextArea();
+        listModel.addElement(task);
         storage.saveTasks(tasks);
     }
 
     // Метод удаления крайней записи
     public void removeLastTask() {
-        if (!tasks.isEmpty()) {
-            tasks.remove(tasks.size() - 1);
-            updateTextArea();
-            storage.saveTasks(tasks); 
+        int lastIndex = this.tasks.size() - 1;
+        if (tasks.isEmpty()) {
+            return;
+        }
+        tasks.remove(lastIndex);
+        listModel.remove(lastIndex);;
+        storage.saveTasks(tasks); 
+    }
+
+    public void removeSelectedTask() {
+        int index = taskList.getSelectedIndex();
+
+        if (index >= 0) {
+            this.tasks.remove(index);
+            this.listModel.remove(index);
+            this.storage.saveTasks(tasks);
+        } else {
+            JOptionPane.showMessageDialog(this.frame, "No task selected!");
         }
     }
 
@@ -128,23 +155,27 @@ public class GUI {
 
         if (choice == JOptionPane.YES_OPTION) {
             tasks.clear();
-            updateTextArea();
+            listModel.clear();
             storage.saveTasks(tasks);
         } else {
             return;
         }
     }
 
-    // Метод обновления записей
-    private void updateTextArea() {
-        this.textArea.setText("");
-        for (String t : tasks) {
-            this.textArea.append(t + "\n");
-        }
+    public JList<String> getTaskList() {
+        return this.taskList;
     }
 
-    public JTextArea getTextArea() {
-        return this.textArea;
+    public ArrayList<String> getTasks() {
+        return this.tasks;
+    }
+
+    public void updateTaskList() {
+        this.taskList.setListData(this.tasks.toArray(new String[0]));
+    }
+
+    public TaskStorage getStorage() {
+        return this.storage;
     }
 
     public String getTextFromTextField() {
