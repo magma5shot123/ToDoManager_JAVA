@@ -16,6 +16,7 @@ public class GUI {
 
     private JButton buttonAdd;
     private JButton buttonRemove;
+    private JButton buttonClearAll;
 
     private Controller controller;
 
@@ -48,12 +49,12 @@ public class GUI {
         this.textField = new JTextField();
         this.frame.add(textField, BorderLayout.CENTER);
 
-        // Создание кнопоки для добавления записи
-
+        
+        // Создание панели для кнопок
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(1, 2));
 
-
+        // Создание кнопоки для добавления записи
         this.buttonAdd = new JButton("Add");
         this.buttonAdd.addActionListener(e -> {
             controller.addTextClick();
@@ -67,8 +68,16 @@ public class GUI {
         });
         buttonPanel.add(this.buttonRemove);
 
+        // Создание кнопки очисти всего листа
+        this.buttonClearAll = new JButton("Clear All");
+        this.buttonClearAll.addActionListener(e -> {
+            controller.clearAllTextClick();
+        });
+        buttonPanel.add(this.buttonClearAll);
+
         this.frame.add(buttonPanel, BorderLayout.SOUTH);
         
+        // Подгрузка тасков из JSON-файла
         this.tasks = storage.loadTasks();
         if (this.tasks == null) {
             this.tasks = new ArrayList<>();
@@ -82,16 +91,19 @@ public class GUI {
         this.frame.setVisible(true);
     }
 
+    // Метод очистки поля ввода
     public void clearInput() {
         this.textField.setText("");
     }
 
+    // Метод добавления записи
     public void addTask(String task) {
         tasks.add(task);
         updateTextArea();
         storage.saveTasks(tasks);
     }
 
+    // Метод удаления крайней записи
     public void removeLastTask() {
         if (!tasks.isEmpty()) {
             tasks.remove(tasks.size() - 1);
@@ -100,6 +112,30 @@ public class GUI {
         }
     }
 
+    // Метод очистки всех записей
+    public void removeAllTask() {
+        if (tasks.isEmpty()) {
+            return;
+        }
+
+        int choice = JOptionPane.showConfirmDialog 
+                (frame, 
+                "Are you shure?",
+                "Confrime delite",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+            tasks.clear();
+            updateTextArea();
+            storage.saveTasks(tasks);
+        } else {
+            return;
+        }
+    }
+
+    // Метод обновления записей
     private void updateTextArea() {
         this.textArea.setText("");
         for (String t : tasks) {

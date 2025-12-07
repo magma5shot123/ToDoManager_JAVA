@@ -21,4 +21,7 @@ public class Controller {
         this.gui.removeLastTask();
     }
 
+    public void clearAllTextClick() {
+        this.gui.removeAllTask();
+    }
 }
